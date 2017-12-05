@@ -8,7 +8,7 @@ import sqlite3
 usage = "Usage: ./eeu.py full_path_to_sbr_au"
 
 labelLookup = {}
-def getLabel(path, id):
+def getDataElementLabel(path, id):
     if id in labelLookup:
         return labelLookup[id]
 
@@ -21,6 +21,35 @@ def getLabel(path, id):
             name = part.replace("\"","").replace("name=","")
             labelLookup[id] = name
             return name
+
+def getDimensionsInReports(c):
+    print "Dims"
+
+def getDataElementsInReports(c):
+    print "Extracting DataElement usage from", sbr_au
+    c.execute("CREATE TABLE usage_de(classification text, controlledid text, agency text, report text, label text)")
+
+    print "Finding out what elements are used in reports..."
+    x = subprocess.check_output("grep -r -i '#DE[0-9]\+' " + sbr_au_reports + " | grep -i preslink", shell=True)
+    for line in x.split('\n'):
+        if line == "": continue
+        if line.find("link:roleRef") > -1: continue
+        de = DataElement(line)
+        c.execute("INSERT INTO usage_de VALUES ('{0}','{1}','{2}','{3}', '{4}')".format(de.classification, de.controlledid, de.agency, de.report, de.label))
+    conn.commit()
+
+    agencies = []
+    for row in c.execute('SELECT distinct agency FROM usage_de ORDER BY agency'):
+        name = str(row[0])
+        agencies.append(name)
+    print "Here are the agencies in the taxonomy:"
+
+    for name in agencies:
+            c.execute("select count(distinct(controlledid)) from usage_de where agency = '{0}' and controlledid not in(select controlledid from usage_de where agency != '{0}')".format(name))
+            print "\t" + name + " has " + str(c.fetchone()[0]) + " unique dataelements that are only used by " + name
+
+
+
 
 class DataElement():
     def __init__(self, line):
@@ -66,7 +95,7 @@ class DataElement():
         exitIfNull(self.classification, "Couldn't extract classification from " + line)
         exitIfNull(self.controlledid, "Couldn't extract controlledid from " + line)
         if self.label == "" or self.label.find(".") == -1:
-            self.label = getLabel(icls + self.classification, self.controlledid)
+            self.label = getDataElementLabel(icls + self.classification, self.controlledid)
         exitIfNull(self.label, "Couldn't extract label from " + line)
 
 def exitIfNull(value, message):
@@ -83,44 +112,32 @@ if (sbr_au[-1] != '/'): sbr_au = sbr_au + '/'
 sbr_au_reports = sbr_au + "sbr_au_reports"
 icls = sbr_au + "sbr_au_taxonomy/icls/"
 
-print "Extracting DataElement usage from", sbr_au
+usage_db_filename =  sbr_au.replace("/","_")[:-len("/sbr_au/")]+".db"
+if os.path.exists(usage_db_filename):
+    print "Removing previous database : " + usage_db_filename
+    os.remove(usage_db_filename)
+print "Created usage database: '" + usage_db_filename + "'"
 
-de_usage_filename =  sbr_au.replace("/","_")[:-len("/sbr_au/")]+".db"
-
-if os.path.exists(de_usage_filename):
-    print "Removing previous database : " + de_usage_filename
-    os.remove(de_usage_filename)
-
-conn = sqlite3.connect(de_usage_filename)
+conn = sqlite3.connect(usage_db_filename)
 c = conn.cursor()
 
-c.execute("CREATE TABLE usage(classification text, controlledid text, agency text, report text, label text)")
-
-print "Finding out what elements are used in reports..."
-
-x = subprocess.check_output("grep -r -i '#DE[0-9]\+' " + sbr_au_reports + " | grep -i preslink", shell=True)
-for line in x.split('\n'):
-    if line == "": continue
-    if line.find("link:roleRef") > -1: continue
-    de = DataElement(line)
-    c.execute("INSERT INTO usage VALUES ('{0}','{1}','{2}','{3}', '{4}')".format(de.classification, de.controlledid, de.agency, de.report, de.label))
-conn.commit()
-
-print "Created data element in report usage database: '" + de_usage_filename + "'"
-
-agencies = []
-for row in c.execute('SELECT distinct agency FROM usage ORDER BY agency'):
-    name = str(row[0])
-    agencies.append(name)
-print "Here are the agencies in the taxonomy:"
-
-for name in agencies:
-        c.execute("select count(distinct(controlledid)) from usage where agency = '{0}' and controlledid not in(select controlledid from usage where agency != '{0}')".format(name))
-        print "\t" + name + " has " + str(c.fetchone()[0]) + " unique dataelements that are only used by " + name
+getDataElementsInReports(c)
+getDimensionsInReports(c)
 
 conn.close()
 print "done."
 
 
-# Number of times a de is used by an agency
-# select controlledid, count((controlledid)), agency from usage group by controlledid
+# Domain Members used in a reports
+# grep '#DM[0-9]\+' ctr.0007.private.02.00.defLink.xml
+
+# Domain Values used in a report
+# grep '#DV[0-9]\+' ctr.0007.private.02.00.defLink.xml
+
+
+
+# Elements that are unique to an agency
+# select distinct(controlledid), label from usage where agency = 'apra' and controlledid not in(select controlledid from usage where agency != 'apra') order by label
+
+# Elemens used by an agency that are also used by others
+# select distinct(controlledid), label from usage where agency = 'apra' and controlledid in(select controlledid from usage where agency != 'apra') order by label
