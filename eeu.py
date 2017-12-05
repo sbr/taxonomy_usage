@@ -64,7 +64,6 @@ if (sbr_au[-1] != '/'): sbr_au = sbr_au + '/'
 sbr_au_reports = sbr_au + "sbr_au_reports"
 
 print "Extracting DataElement usage from", sbr_au
-print "Finding out what elements are used in reports..."
 
 de_usage_filename =  sbr_au.replace("/","_")[:-len("/sbr_au/")]+".db"
 
@@ -76,6 +75,8 @@ conn = sqlite3.connect(de_usage_filename)
 c = conn.cursor()
 
 c.execute("CREATE TABLE usage(classification text, controlledid text, agency text, report text)")
+
+print "Finding out what elements are used in reports..."
 
 x = subprocess.check_output("grep -r -i '#DE[0-9]\+' " + sbr_au_reports + " | grep -i preslink", shell=True)
 for line in x.split('\n'):
@@ -98,3 +99,7 @@ for name in agencies:
 
 conn.close()
 print "done."
+
+
+# Number of times a de is used by an agency
+# select controlledid, count((controlledid)), agency from usage group by controlledid
