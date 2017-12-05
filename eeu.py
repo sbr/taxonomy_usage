@@ -67,6 +67,7 @@ print "Extracting DataElement usage from", sbr_au
 print "Finding out what elements are used in reports..."
 
 de_usage_filename =  sbr_au.replace("/","_")[:-len("/sbr_au/")]+".db"
+
 if os.path.exists(de_usage_filename):
     print "Removing previous database : " + de_usage_filename
     os.remove(de_usage_filename)
@@ -74,15 +75,7 @@ if os.path.exists(de_usage_filename):
 conn = sqlite3.connect(de_usage_filename)
 c = conn.cursor()
 
-#self.classification = ""
-#self.label = ""
-#self.controlledid = ""
-#self.agency = ""
-#self.report = ""
-
-c.execute('''CREATE TABLE usage
-             (classification text, controlledid text, agency text, report text)''')
-
+c.execute("CREATE TABLE usage(classification text, controlledid text, agency text, report text)")
 
 x = subprocess.check_output("grep -r -i '#DE[0-9]\+' " + sbr_au_reports + " | grep -i preslink", shell=True)
 for line in x.split('\n'):
@@ -90,7 +83,18 @@ for line in x.split('\n'):
     de = DataElement(line)
     c.execute("INSERT INTO usage VALUES ('{0}','{1}','{2}','{3}')".format(de.classification, de.controlledid, de.agency, de.report))
 conn.commit()
-conn.close()
+
 print "Created data element in report usage database: '" + de_usage_filename + "'"
 
+agencies = []
+for row in c.execute('SELECT distinct agency FROM usage ORDER BY agency'):
+    name = str(row[0])
+    agencies.append(name)
+print "Here are the agencies in the taxonomy:"
+
+for name in agencies:
+        c.execute("select count(distinct(controlledid)) from usage where agency = '{0}' and controlledid not in(select controlledid from usage where agency != '{0}')".format(name))
+        print "\t" + name + " has " + str(c.fetchone()[0]) + " unique dataelements that are only used by " + name
+
+conn.close()
 print "done."
