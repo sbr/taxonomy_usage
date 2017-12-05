@@ -7,6 +7,21 @@ import sqlite3
 
 usage = "Usage: ./eeu.py full_path_to_sbr_au"
 
+labelLookup = {}
+def getLabel(path, id):
+    if id in labelLookup:
+        return labelLookup[id]
+
+    path = path + ".data.xsd"
+    newId = '"' + id + "\\\"\""
+    cmd = "grep " + newId + " " + path
+
+    for part in subprocess.check_output(cmd, shell=True).replace("\t",' ').replace("  "," ").split(" "):
+        if part.startswith("name"):
+            name = part.replace("\"","").replace("name=","")
+            labelLookup[id] = name
+            return name
+
 class DataElement():
     def __init__(self, line):
         self.line = line
@@ -18,7 +33,7 @@ class DataElement():
         self.extractDataelement()
 
     def __str__(self):
-        return self.agency + ", " + self.report + ", " + self.classification + ", " + self.controlledid + "\n"# + ", " + self.label
+        return self.agency + ", " + self.report + ", " + self.classification + ", " + self.controlledid  + ", " + self.label + "\n"
 
     def extractDataelement(self):
         line = self.line.replace("\t",' ').replace("  "," ").replace("\\","/")
@@ -34,21 +49,25 @@ class DataElement():
         self.report = urlparts[-1][:-len(".presLink.xml:")]
         exitIfNull(self.report, "Couldn't extract report name from " + line)
 
+        href = ""
         for p in range(0 ,len(lineparts)):
             part = lineparts[p]
             if part.startswith("xlink:href="):
+                href = part
                 dataelementparts = re.sub(r".*icls/", "", part).replace("\"","").split("#")
                 self.classification = dataelementparts[0][:-len(".data.xsd")]
                 self.controlledid = dataelementparts[1]
 
-            #if part.startswith("xlink:title="):
-            #    label = part[(part.find("\"")) + 1 :]
-            #    self.label = label[0: label.rfind("\"")]
+            if part.startswith("xlink:title="):
+                label = part[(part.find("\"")) + 1 :]
+                self.label = label[0: label.rfind("\"")]
+
 
         exitIfNull(self.classification, "Couldn't extract classification from " + line)
         exitIfNull(self.controlledid, "Couldn't extract controlledid from " + line)
-        #exitIfNull(self.label, "Couldn't extract label from " + line)
-
+        if self.label == "" or self.label.find(".") == -1:
+            self.label = getLabel(icls + self.classification, self.controlledid)
+        exitIfNull(self.label, "Couldn't extract label from " + line)
 
 def exitIfNull(value, message):
     if value == "" or len(value) == 0 or value == None:
@@ -62,6 +81,7 @@ if len(sys.argv) != 2:
 sbr_au = sys.argv[1]
 if (sbr_au[-1] != '/'): sbr_au = sbr_au + '/'
 sbr_au_reports = sbr_au + "sbr_au_reports"
+icls = sbr_au + "sbr_au_taxonomy/icls/"
 
 print "Extracting DataElement usage from", sbr_au
 
@@ -74,15 +94,16 @@ if os.path.exists(de_usage_filename):
 conn = sqlite3.connect(de_usage_filename)
 c = conn.cursor()
 
-c.execute("CREATE TABLE usage(classification text, controlledid text, agency text, report text)")
+c.execute("CREATE TABLE usage(classification text, controlledid text, agency text, report text, label text)")
 
 print "Finding out what elements are used in reports..."
 
 x = subprocess.check_output("grep -r -i '#DE[0-9]\+' " + sbr_au_reports + " | grep -i preslink", shell=True)
 for line in x.split('\n'):
     if line == "": continue
+    if line.find("link:roleRef") > -1: continue
     de = DataElement(line)
-    c.execute("INSERT INTO usage VALUES ('{0}','{1}','{2}','{3}')".format(de.classification, de.controlledid, de.agency, de.report))
+    c.execute("INSERT INTO usage VALUES ('{0}','{1}','{2}','{3}', '{4}')".format(de.classification, de.controlledid, de.agency, de.report, de.label))
 conn.commit()
 
 print "Created data element in report usage database: '" + de_usage_filename + "'"
