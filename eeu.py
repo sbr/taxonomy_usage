@@ -22,14 +22,35 @@ def getDataElementLabel(path, id):
             labelLookup[id] = name
             return name
 
+def getDimensionLabel(path, id):
+    if id in labelLookup:
+        return labelLookup[id]
+
+    path = path + ".data.xsd"
+    newId = '"' + id + "\\\"\""
+    cmd = "grep " + newId + " " + path
+
+    for part in subprocess.check_output(cmd, shell=True).replace("\t",' ').replace("  "," ").split(" "):
+        if part.startswith("name"):
+            name = part.replace("\"","").replace("name=","")
+            labelLookup[id] = name
+            return name
+
 def getDimensionsInReports(c):
-    print "Dims"
+    print "Extracting Dimension usage from", sbr_au
+
+    c.execute("CREATE TABLE usage_dm(filename text, controlledid text, agency text, report text, label text)")
+    x = subprocess.check_output("grep -r -i '#DM[0-9]\+' " + sbr_au_reports + " | grep -i private.*deflink", shell=True)
+    for line in x.split('\n'):
+        if line == "": continue
+        dm = Dimension(line)
+        c.execute("INSERT INTO usage_dm VALUES ('{0}','{1}','{2}','{3}', '{4}')".format(dm.filename, dm.controlledid, dm.agency, dm.report, dm.label))
+    conn.commit()
 
 def getDataElementsInReports(c):
     print "Extracting DataElement usage from", sbr_au
     c.execute("CREATE TABLE usage_de(classification text, controlledid text, agency text, report text, label text)")
 
-    print "Finding out what elements are used in reports..."
     x = subprocess.check_output("grep -r -i '#DE[0-9]\+' " + sbr_au_reports + " | grep -i preslink", shell=True)
     for line in x.split('\n'):
         if line == "": continue
@@ -50,6 +71,50 @@ def getDataElementsInReports(c):
 
 
 
+class Dimension():
+    def __init__(self, line):
+        self.line = line
+        self.filename = ""
+        self.label = ""
+        self.controlledid = ""
+        self.agency = ""
+        self.report = ""
+        self.extract()
+
+    def extract(self):
+        line = self.line.replace("\t",' ').replace("  "," ").replace("\\","/")
+        lineparts = line.split(" ")
+
+        urlparts = lineparts[0].replace(sbr_au_reports,"").split('/')
+        if(len(urlparts) < 2):
+            print "Couldn't extract agency name from " + self.line
+            sys.exit(1)
+
+        self.agency = urlparts[1]
+        exitIfNull(self.agency, "Couldn't extract agency name from " + line)
+
+        self.report = urlparts[-1][:-len(".defLink.xml:")]
+        exitIfNull(self.report, "Couldn't extract report name from " + line)
+
+        for p in range(0 ,len(lineparts)):
+            part = lineparts[p]
+
+            if part.startswith("xlink:href="):
+                href = part
+                dimensionparts = re.sub(r".*icls/", "", part).replace("\"","").split("#")
+                self.filename = re.sub(r".*sbr_au_taxonomy/dims/", "", dimensionparts[0])[:-len(".data.xsd")]
+                self.controlledid = dimensionparts[1]
+
+            if part.startswith("xlink:label="):
+                label = part[(part.find("\"")) + 1 :]
+                self.label = label[0: label.rfind("\"")]
+
+        exitIfNull(self.label, "Couldn't extract label from " + line)
+        if self.label.find("Dimension") == -1:
+            self.label = getDimensionLabel(dims + self.filename, self.controlledid)
+        exitIfNull(self.filename, "Couldn't extract filename from " + line)
+        exitIfNull(self.controlledid, "Couldn't extract controlledid from " + line)
+
 
 class DataElement():
     def __init__(self, line):
@@ -59,12 +124,12 @@ class DataElement():
         self.controlledid = ""
         self.agency = ""
         self.report = ""
-        self.extractDataelement()
+        self.extract()
 
     def __str__(self):
         return self.agency + ", " + self.report + ", " + self.classification + ", " + self.controlledid  + ", " + self.label + "\n"
 
-    def extractDataelement(self):
+    def extract(self):
         line = self.line.replace("\t",' ').replace("  "," ").replace("\\","/")
         lineparts = line.split(" ")
 
@@ -111,6 +176,7 @@ sbr_au = sys.argv[1]
 if (sbr_au[-1] != '/'): sbr_au = sbr_au + '/'
 sbr_au_reports = sbr_au + "sbr_au_reports"
 icls = sbr_au + "sbr_au_taxonomy/icls/"
+dims = sbr_au + "sbr_au_taxonomy/dims/"
 
 usage_db_filename =  sbr_au.replace("/","_")[:-len("/sbr_au/")]+".db"
 if os.path.exists(usage_db_filename):
@@ -121,20 +187,14 @@ print "Created usage database: '" + usage_db_filename + "'"
 conn = sqlite3.connect(usage_db_filename)
 c = conn.cursor()
 
-getDataElementsInReports(c)
+#getDataElementsInReports(c)
 getDimensionsInReports(c)
 
 conn.close()
 print "done."
 
-
-# Domain Members used in a reports
-# grep '#DM[0-9]\+' ctr.0007.private.02.00.defLink.xml
-
-# Domain Values used in a report
-# grep '#DV[0-9]\+' ctr.0007.private.02.00.defLink.xml
-
-
+# Domain Memebers and Values used in a report
+# grep '#D[VM][0-9]\+' ctr.0007.private.02.00.defLink.xml
 
 # Elements that are unique to an agency
 # select distinct(controlledid), label from usage where agency = 'apra' and controlledid not in(select controlledid from usage where agency != 'apra') order by label
