@@ -8,7 +8,9 @@ import sqlite3
 usage = "Usage: ./eeu.py full_path_to_sbr_au"
 
 labelLookup = {}
-def getDataElementLabel(path, id):
+datatypeLookup = {}
+def loadDataElementDetails(path, id):
+    # 	<xsd:element name="OrganisationNameDetails.OrganisationalName.Text" substitutionGroup="xbrli:item" nillable="true" id="DE55" xbrli:periodType="duration" type="dtyp.02.00:sbrOrganisationNameItemType" block="substitution"/>
     if id in labelLookup:
         return labelLookup[id]
 
@@ -20,7 +22,10 @@ def getDataElementLabel(path, id):
         if part.startswith("name"):
             name = part.replace("\"","").replace("name=","")
             labelLookup[id] = name
-            return name
+        if part.startswith("type"):
+            datatype = part.replace("\"","").replace("type=","")
+            datatypeLookup[id] = datatype
+
 
 def getDimensionLabel(path, id):
     if id in labelLookup:
@@ -49,14 +54,14 @@ def getDimensionsInReports(c):
 
 def getDataElementsInReports(c):
     print "Extracting DataElement usage from", sbr_au
-    c.execute("CREATE TABLE usage_de(classification text, controlledid text, agency text, report text, label text)")
+    c.execute("CREATE TABLE usage_de(classification text, controlledid text, agency text, report text, label text, datatype text)")
 
     x = subprocess.check_output("grep -r -i '#DE[0-9]\+' " + sbr_au_reports + " | grep -i preslink", shell=True)
     for line in x.split('\n'):
         if line == "": continue
         if line.find("link:roleRef") > -1: continue
         de = DataElement(line)
-        c.execute("INSERT INTO usage_de VALUES ('{0}','{1}','{2}','{3}', '{4}')".format(de.classification, de.controlledid, de.agency, de.report, de.label))
+        c.execute("INSERT INTO usage_de VALUES ('{0}','{1}','{2}','{3}', '{4}', '{5}')".format(de.classification, de.controlledid, de.agency, de.report, de.label, de.datatype))
     conn.commit()
 
     agencies = []
@@ -124,6 +129,7 @@ class DataElement():
         self.controlledid = ""
         self.agency = ""
         self.report = ""
+        self.datatype = ""
         self.extract()
 
     def __str__(self):
@@ -159,8 +165,11 @@ class DataElement():
 
         exitIfNull(self.classification, "Couldn't extract classification from " + line)
         exitIfNull(self.controlledid, "Couldn't extract controlledid from " + line)
+        loadDataElementDetails(icls + self.classification, self.controlledid)
+        self.datatype = datatypeLookup[self.controlledid]
+        exitIfNull(self.datatype, "Couldn't extract datatype from " + line)
         if self.label == "" or self.label.find(".") == -1:
-            self.label = getDataElementLabel(icls + self.classification, self.controlledid)
+            self.label = labelLookup[self.controlledid]
         exitIfNull(self.label, "Couldn't extract label from " + line)
 
 def exitIfNull(value, message):
@@ -187,8 +196,8 @@ print "Created usage database: '" + usage_db_filename + "'"
 conn = sqlite3.connect(usage_db_filename)
 c = conn.cursor()
 
-#getDataElementsInReports(c)
-getDimensionsInReports(c)
+getDataElementsInReports(c)
+#getDimensionsInReports(c)
 
 conn.close()
 print "done."
