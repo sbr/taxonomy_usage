@@ -9,6 +9,18 @@ usage = "Usage: ./eeu.py full_path_to_sbr_au"
 
 labelLookup = {}
 datatypeLookup = {}
+reclassificaionLookup = {
+"DE13194":"baf/bafpo/bafpo1",
+"DE2056":"baf/bafpo/bafpo1",
+"DE2591":"baf/bafpr/bafpr1",
+"DE3535":"baf/bafpr/bafpr1",
+"DE5225":"baf/bafpo/bafpo4",
+"DE8583":"baf/bafpr/bafpr1",
+"DE9":"py/pyid/pyid",
+"DE9087":"baf/bafot/bafot",
+"DE9088":"baf/bafot/bafot",
+"DE9089":"baf/bafot/bafot"}
+
 def loadDataElementDetails(path, id):
     # 	<xsd:element name="OrganisationNameDetails.OrganisationalName.Text" substitutionGroup="xbrli:item" nillable="true" id="DE55" xbrli:periodType="duration" type="dtyp.02.00:sbrOrganisationNameItemType" block="substitution"/>
     if id in labelLookup:
@@ -52,9 +64,44 @@ def getDimensionsInReports(c):
         c.execute("INSERT INTO usage_dm VALUES ('{0}','{1}','{2}','{3}', '{4}')".format(dm.filename, dm.controlledid, dm.agency, dm.report, dm.label))
     conn.commit()
 
+
+
+def populateDataelementLatestVersion(de):
+    c.execute("select classification from latest_de where controlledid = '{0}'".format(de.controlledid))
+    existingClassification = c.fetchone()
+    if(existingClassification == None):
+        if(de.controlledid in reclassificaionLookup): de.classification = reclassificaionLookup[de.controlledid] + ".02.00"
+        c.execute("INSERT INTO latest_de VALUES ('{0}','{1}','{2}','{3}')".format(de.classification, de.controlledid, de.label, de.datatype))
+        return
+
+    existingClassification = existingClassification[0]
+
+    if(existingClassification == de.classification): return
+
+    sameICLS = existingClassification[:-2] == de.classification[:-2]
+
+    if sameICLS and (existingClassification < de.classification):
+        #print "Updating version of ", de.controlledid, "from", existingClassification,"to",de.classification
+        c.execute("delete from latest_de where controlledid = '{0}'".format(de.controlledid))
+        c.execute("INSERT INTO latest_de VALUES ('{0}','{1}','{2}','{3}')".format(de.classification, de.controlledid, de.label, de.datatype))
+        return
+
+    if not sameICLS and de.classification[:-6] != reclassificaionLookup[de.controlledid]:
+
+        if(de.controlledid not in reclassificaionLookup):
+            print "Not sure what to do about reclasification that isn't in map!", de.controlledid, existingClassification, de.classification
+            sys.exit(1)
+
+        #print "reclassificaionLookup says",de.controlledid,"was reclassified to",reclassificaionLookup[de.controlledid]
+        c.execute("delete from latest_de where controlledid = '{0}'".format(de.controlledid))
+        c.execute("INSERT INTO latest_de VALUES ('{0}','{1}','{2}','{3}')".format(de.classification, de.controlledid, de.label, de.datatype))
+
+
 def getDataElementsInReports(c):
     print "Extracting DataElement usage from", sbr_au
     c.execute("CREATE TABLE usage_de(classification text, controlledid text, agency text, report text, label text, datatype text)")
+    c.execute("CREATE TABLE latest_de(classification text, controlledid text, label text, datatype text)")
+
 
     x = subprocess.check_output("grep -r -i '#DE[0-9]\+' " + sbr_au_reports + " | grep -i preslink", shell=True)
     for line in x.split('\n'):
@@ -62,6 +109,7 @@ def getDataElementsInReports(c):
         if line.find("link:roleRef") > -1: continue
         de = DataElement(line)
         c.execute("INSERT INTO usage_de VALUES ('{0}','{1}','{2}','{3}', '{4}', '{5}')".format(de.classification, de.controlledid, de.agency, de.report, de.label, de.datatype))
+        populateDataelementLatestVersion(de)
     conn.commit()
 
     agencies = []
@@ -73,7 +121,6 @@ def getDataElementsInReports(c):
     for name in agencies:
             c.execute("select count(distinct(controlledid)) from usage_de where agency = '{0}' and controlledid not in(select controlledid from usage_de where agency != '{0}')".format(name))
             print "\t" + name + " has " + str(c.fetchone()[0]) + " unique dataelements that are only used by " + name
-
 
 
 class Dimension():
