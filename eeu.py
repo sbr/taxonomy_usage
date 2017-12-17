@@ -210,3 +210,7 @@ print "done."
 
 # Elemens used by an agency that are also used by others
 # select distinct(controlledid), label from usage where agency = 'apra' and controlledid in(select controlledid from usage where agency != 'apra') order by label
+
+
+# Datatypes used only by this agency
+# select distinct(controlledid), label, datatype from usage_de where agency = 'apra' and controlledid not in(select controlledid from usage_de where agency != 'apra') and datatype not like 'xbrli%' and datatype not in (select datatype from usage_de where agency !='apra') order by label
