@@ -53,7 +53,7 @@ def getDataElementLabelsFromLabLink(path, elements):
 def getLabelsForDataElements(c):
     print "Getting labels for DataElements"
     c.execute("DROP TABLE IF EXISTS labels")
-    c.execute("CREATE TABLE labels(controlledid text, role text, label text)")
+    c.execute("CREATE TABLE labels(controlledid text, labelrole text, label text)")
 
     fileList = []
     for row in c.execute("select distinct classification from latest_de"):
@@ -162,16 +162,6 @@ def getDataElementsInReports(c):
         populateDataelementLatestVersion(de)
     conn.commit()
 
-    agencies = []
-    for row in c.execute('SELECT distinct agency FROM usage_de ORDER BY agency'):
-        name = str(row[0])
-        agencies.append(name)
-    print "Here are the agencies in the taxonomy:"
-
-    for name in agencies:
-            c.execute("select count(distinct(controlledid)) from usage_de where agency = '{0}' and controlledid not in(select controlledid from usage_de where agency != '{0}')".format(name))
-            print "\t" + name + " has " + str(c.fetchone()[0]) + " unique dataelements that are only used by " + name
-
 
 class Dimension():
     def __init__(self, line):
@@ -272,6 +262,26 @@ class DataElement():
         exitIfNull(self.label, "Couldn't extract label from " + line)
 
 
+def makeExampleTable(c):
+    dataElements = []
+    for row in c.execute("select controlledid from latest_de limit 5"):
+        dataElements.append(str(row[0]))
+
+    for dataElement in dataElements:
+        c.execute("select label from labels where controlledid = '{0}' and labelrole = 'label'".format(dataElement))
+        label = c.fetchone()[0]
+        c.execute("select label from labels where controlledid = '{0}' and labelrole = 'definition'".format(dataElement))
+        definition = c.fetchone()[0]
+
+        print """
+        <tr>
+            <td class="table_name"><strong><a href="#">{0}</a></strong></td>
+            <td class="table_definition">{1}</td>
+            <td class="table_domain"><a href="#">Standard Business Reporting</a></td>
+            <td class="table_status">Preferred Standard</td>
+        </tr>
+        """.format(label, definition)
+
 
 def exitIfNull(value, message):
     if value == "" or len(value) == 0 or value == None:
@@ -290,7 +300,6 @@ dims = sbr_au + "sbr_au_taxonomy/dims/"
 
 usage_db_filename =  sbr_au.replace("/","_")[:-len("/sbr_au/")]+".db"
 
-
 if os.path.exists(usage_db_filename):
     print "Removing previous database : " + usage_db_filename
     os.remove(usage_db_filename)
@@ -302,6 +311,8 @@ c = conn.cursor()
 getDataElementsInReports(c)
 getLabelsForDataElements(c)
 #getDimensionsInReports(c)
+
+#makeExampleTable(c)
 
 conn.commit()
 conn.close()
