@@ -1,9 +1,11 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 import subprocess
 import sys
 import re
 import os
 import sqlite3
+from bs4 import BeautifulSoup
 
 usage = "Usage: ./eeu.py full_path_to_sbr_au"
 
@@ -20,6 +22,54 @@ reclassificaionLookup = {
 "DE9087":"baf/bafot/bafot",
 "DE9088":"baf/bafot/bafot",
 "DE9089":"baf/bafot/bafot"}
+
+def getDataElementLabelsFromLabLink(path, elements):
+    path = icls + path + ".labLink.xml"
+    #print "Getting labels from",path
+    f = open(path)
+    soup = BeautifulSoup(f, 'xml')
+    labels = soup.findAll("link:label")
+    for label in labels:
+        controlledid = label['xlink:label'].replace("lbl_","")
+        if (controlledid not in elements): continue
+        #print controlledid, label['xlink:role'], label.text
+        role = "label"
+        if (label['xlink:role'].lower().find("definition") > 0):role = "definition"
+        if (label['xlink:role'].lower().find("guidance") > 0):role = "guidance"
+
+        #label.text = label.text.replace("â€™","''")
+        #label.text.decode("utf-8").replace("â€™", "''").encode("utf-8")
+        labelText = label.text.encode('utf-8').replace("â€™","'").replace("â€˜","'").decode("utf-8")
+
+        try:
+            labelAsString = str(labelText)
+        except:
+            print "There is an invalid encoding in label for dataelement",controlledid
+            print label.text
+            sys.exit(1)
+
+        c.execute("INSERT INTO labels VALUES ( ?, ?, ? )", (controlledid, role, labelText))
+
+def getLabelsForDataElements(c):
+    print "Getting labels for DataElements"
+    c.execute("DROP TABLE IF EXISTS labels")
+    c.execute("CREATE TABLE labels(controlledid text, role text, label text)")
+
+    fileList = []
+    for row in c.execute("select distinct classification from latest_de"):
+        fileList.append(str(row[0]))
+
+    for file in fileList:
+        deList = []
+        for row in c.execute("select controlledid from latest_de where classification = '{0}'".format(file)):
+            deList.append(str(row[0]))
+        getDataElementLabelsFromLabLink(file,deList)
+
+def camel_case_split(identifier):
+    print identifier
+    identifier = identifier.replace(".","")
+    matches = re.finditer('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)', identifier)
+    return " ".join([m.group(0) for m in matches])
 
 def loadDataElementDetails(path, id):
     # 	<xsd:element name="OrganisationNameDetails.OrganisationalName.Text" substitutionGroup="xbrli:item" nillable="true" id="DE55" xbrli:periodType="duration" type="dtyp.02.00:sbrOrganisationNameItemType" block="substitution"/>
@@ -71,7 +121,7 @@ def populateDataelementLatestVersion(de):
     existingClassification = c.fetchone()
     if(existingClassification == None):
         if(de.controlledid in reclassificaionLookup): de.classification = reclassificaionLookup[de.controlledid] + ".02.00"
-        c.execute("INSERT INTO latest_de VALUES ('{0}','{1}','{2}','{3}')".format(de.classification, de.controlledid, de.label, de.datatype))
+        c.execute("INSERT INTO latest_de VALUES ('{0}','{1}','{2}','{3}')".format(de.classification, de.controlledid,de.label, de.datatype))
         return
 
     existingClassification = existingClassification[0]
@@ -215,9 +265,13 @@ class DataElement():
         loadDataElementDetails(icls + self.classification, self.controlledid)
         self.datatype = datatypeLookup[self.controlledid]
         exitIfNull(self.datatype, "Couldn't extract datatype from " + line)
+
         if self.label == "" or self.label.find(".") == -1:
             self.label = labelLookup[self.controlledid]
+
         exitIfNull(self.label, "Couldn't extract label from " + line)
+
+
 
 def exitIfNull(value, message):
     if value == "" or len(value) == 0 or value == None:
@@ -235,6 +289,8 @@ icls = sbr_au + "sbr_au_taxonomy/icls/"
 dims = sbr_au + "sbr_au_taxonomy/dims/"
 
 usage_db_filename =  sbr_au.replace("/","_")[:-len("/sbr_au/")]+".db"
+
+
 if os.path.exists(usage_db_filename):
     print "Removing previous database : " + usage_db_filename
     os.remove(usage_db_filename)
@@ -244,8 +300,10 @@ conn = sqlite3.connect(usage_db_filename)
 c = conn.cursor()
 
 getDataElementsInReports(c)
+getLabelsForDataElements(c)
 #getDimensionsInReports(c)
 
+conn.commit()
 conn.close()
 print "done."
 
