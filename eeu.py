@@ -6,6 +6,7 @@ import re
 import os
 import sqlite3
 from bs4 import BeautifulSoup
+import json
 
 usage = "Usage: ./eeu.py full_path_to_sbr_au"
 
@@ -22,6 +23,21 @@ reclassificaionLookup = {
 "DE9087":"baf/bafot/bafot",
 "DE9088":"baf/bafot/bafot",
 "DE9089":"baf/bafot/bafot"}
+
+agencyLookup = {
+"apra":"Australian Prudential Regulation Agency",
+"asic": "Australian Securities and Investments Commission",
+"ato": "Australian Taxation Office",
+"osract": "ACT Office of Revenue",
+"osrnsw": "NSW Office of Revenue",
+"osrnt": "NT Office of Revenue",
+"osrqld": "QLD Office of Revenue",
+"osrsa": "SA Office of Revenue",
+"osrtas": "TAS Office of Revenue",
+"osrvic": "VIC Office of Revenue",
+"osrwa": "WA Office of Revenue",
+"sprstrm": "SuperStream"
+}
 
 def getDataElementLabelsFromLabLink(path, elements):
     path = icls + path + ".labLink.xml"
@@ -262,25 +278,53 @@ class DataElement():
         exitIfNull(self.label, "Couldn't extract label from " + line)
 
 
-def makeExampleTable(c):
+def generateDataElementJSON(c):
+    print "Writing definitions to 'definitions.json'"
     dataElements = []
-    for row in c.execute("select controlledid from latest_de limit 5"):
+    for row in c.execute("select controlledid from latest_de order by controlledid"):
         dataElements.append(str(row[0]))
 
+    elements = []
     for dataElement in dataElements:
+        element = {}
         c.execute("select label from labels where controlledid = '{0}' and labelrole = 'label'".format(dataElement))
-        label = c.fetchone()[0]
-        c.execute("select label from labels where controlledid = '{0}' and labelrole = 'definition'".format(dataElement))
-        definition = c.fetchone()[0]
+        element["name"] = c.fetchone()[0]
+        try:
+            c.execute("select label from labels where controlledid = '{0}' and labelrole = 'definition'".format(dataElement))
+            element["definition"] = c.fetchone()[0]
+        except:
+            pass
+        try:
+            c.execute("select label from labels where controlledid = '{0}' and labelrole = 'guidance'".format(dataElement))
+            element["guidance"] = c.fetchone()[0]
+        except:
+            pass
+        element["status"] = "Standard"
 
-        print """
-        <tr>
-            <td class="table_name"><strong><a href="#">{0}</a></strong></td>
-            <td class="table_definition">{1}</td>
-            <td class="table_domain"><a href="#">Standard Business Reporting</a></td>
-            <td class="table_status">Preferred Standard</td>
-        </tr>
-        """.format(label, definition)
+        usage = []
+        for agency in c.execute("select distinct agency from usage_de where controlledid = '{0}'".format(dataElement)):
+            usage.append(agencyLookup[agency[0]])
+        element["usage"] = usage
+
+        justAPRA = (usage == ["Australian Prudential Regulation Agency"])
+        if justAPRA:
+            element["domain"] = "Financial Statistics"
+            element["identifier"] = "http://dxa.gov.au/definition/fs/" + dataElement.lower()
+        else:
+            element["domain"] = "Standard Business Reporting"
+            element["identifier"] = "http://dxa.gov.au/definition/sbr/" + dataElement.lower()
+        elements.append(element)
+
+    definitions_file_name = 'definitions.json'
+    if os.path.exists(definitions_file_name):
+        print "Removing previous", definitions_file_name
+        os.remove(definitions_file_name)
+    print "Created",definitions_file_name
+
+    text_file = open(definitions_file_name, "w")
+    text_file.write(json.dumps(elements))
+    text_file.close()
+
 
 
 def exitIfNull(value, message):
@@ -312,7 +356,7 @@ getDataElementsInReports(c)
 getLabelsForDataElements(c)
 #getDimensionsInReports(c)
 
-#makeExampleTable(c)
+generateDataElementJSON(c)
 
 conn.commit()
 conn.close()
