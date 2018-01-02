@@ -12,6 +12,7 @@ usage = "Usage: ./eeu.py full_path_to_sbr_au"
 
 labelLookup = {}
 datatypeLookup = {}
+datatypeJSONLookup = {}
 reclassificaionLookup = {
 "DE13194":"baf/bafpo/bafpo1",
 "DE2056":"baf/bafpo/bafpo1",
@@ -38,6 +39,44 @@ agencyLookup = {
 "osrwa": "WA Office of Revenue",
 "sprstrm": "SuperStream"
 }
+
+xbrlDataTypeMap = {
+"xbrli:stringItemType": "string",
+"xbrli:tokenItemType": "string",
+"xbrli:decimalItemType": "float",
+"xbrli:monetaryItemType": "float",
+"xbrli:booleanItemType": "boolean",
+"xbrli:dateItemType": "string",
+"xbrli:nonNegativeIntegerItemType": "int",
+"xbrli:positiveIntegerItemType": "int",
+"xbrli:pureItemType": "float",
+"xbrli:gDayItemType": "string",
+"xbrli:gMonthItemType": "string",
+"xbrli:gYearItemType": "string",
+"xbrli:fractionItemType": "float",
+"xbrli:dateTimeItemType": "string",
+"xbrli:integerItemType": "int",
+"xbrli:sharesItemType": "float",
+"xbrli:floatItemType": "float",
+"xbrli:timeItemType": "string"
+}
+
+# these datatypes have changed names since they were published
+datataypeReplacements = {
+"sbrPercentageBracketItemType": "sbrPercentageBracketCodeItemType",
+"sbrFringeBenefitTypeItemType": "sbrFringeBenefitCodeItemType",
+"sbrIncomeTaxAssessmentCalculationItemType": "sbrIncomeTaxAssessmentCalculationCodeItemType",
+"sbrExpenseDeductionCodeItemType": "sbrExpenseOtherCodeItemType",
+"sbrWithholdingPaymentIncomeTypeItemType": "sbrWithholdingPaymentIncomeTypeCodeItemType",
+"sbrThinCapitalisationEntityTypeItemType": "sbrThinCapitalisationEntityTypeCodeItemType",
+"sbrStatementProcessStatusItemType": "sbrStatementProcessStatusCodeItemType",
+"sbrGstReportingOptionItemType": "sbrGstReportingOptionCodeItemType",
+"sbrOrganisationTypeItemType": "sbrOrganisationTypeCodeItemType",
+"sbrPartyTypeItemType": "sbrPartyTypeCodeItemType",
+"sbrLodgmentFrequencyItemType": "sbrLodgmentFrequencyCodeItemType"
+}
+
+ignoredDataTypes = ["sbrReportTypeVariationCodeItemType"]
 
 def getDataElementLabelsFromLabLink(path, elements):
     path = icls + path + ".labLink.xml"
@@ -224,6 +263,40 @@ class Dimension():
         exitIfNull(self.controlledid, "Couldn't extract controlledid from " + line)
 
 
+class DataType():
+    def __init__(self, element):
+        self.element = element
+        self.name = ""
+        self.values = []
+        self.facets = {}
+        self.ignore = False
+        self.base = ""
+        self.extract()
+
+    def extract(self):
+        self.name = self.element['name']
+        if(self.name in ignoredDataTypes):
+            self.ignore = True
+            return
+        exitIfNull(self.name, "Couldn't get name from:\n" + str(self.element))
+
+        for part in self.element.descendants:
+            if part.name == "enumeration":
+                self.values.append(part["value"])
+
+            if part.name in ["maxLength","minLength","minInclusive","pattern","totalDigits","fractionDigits"]:
+                self.facets[part.name] = str(part["value"])
+
+            if part.name == "restriction":
+                base = part["base"]
+                if base in xbrlDataTypeMap:
+                    self.base = xbrlDataTypeMap[base]
+
+        #if self.values != []: print "Got enumerations: ", ','.join(self.values)
+        #if self.facets != {}: print "Got faets ", str(self.facets)
+        if self.values == [] and self.facets == {}: exitIfNull("", "Got no enumerations or facets from:\n" + str(self.element))
+        exitIfNull(self.base, "Couldn't get base type from:\n" + str(self.element))
+
 class DataElement():
     def __init__(self, line):
         self.line = line
@@ -313,7 +386,27 @@ def generateDataElementJSON(c):
         else:
             element["domain"] = "Standard Business Reporting"
             element["identifier"] = "http://dxa.gov.au/definition/sbr/" + dataElement.lower()
+
+        c.execute("select datatype from latest_de where controlledid = '{0}'".format(dataElement))
+        datatype = c.fetchone()[0]
+
+
+        if(datatype.startswith("dtyp")):
+            datatype = datatype.split(":")[1]
+
+            if(datatype in datataypeReplacements): datatype = datataypeReplacements[datatype]
+
+            dt = datatypeJSONLookup[datatype]
+            typeDict = {"type" : dt.base}
+            if(dt.values != []): typeDict["values"] = dt.values
+            if(dt.facets != {}): typeDict["facets"] = dt.facets
+            element["datatype"] = typeDict
+        else:
+            element["datatype"] = xbrlDataTypeMap[datatype]
+
         elements.append(element)
+
+
 
     definitions_file_name = 'definitions.json'
     if os.path.exists(definitions_file_name):
@@ -324,6 +417,21 @@ def generateDataElementJSON(c):
     text_file = open(definitions_file_name, "w")
     text_file.write(json.dumps(elements))
     text_file.close()
+
+
+def getDataTypes(c):
+    ## The latest datatype file should be enough
+    path = fdtn + "dtyp*"
+    cmd = "ls "+ path +" | sort -r | head -n 1"
+    path = subprocess.check_output(cmd, shell=True).replace("\n","")
+
+    print "Getting datatypes from",path
+    f = open(path)
+    soup = BeautifulSoup(f, 'xml')
+    types = soup.findAll("xsd:complexType")
+    for type in types:
+        dt = DataType(type)
+        datatypeJSONLookup[dt.name] = dt
 
 
 
@@ -340,6 +448,7 @@ sbr_au = sys.argv[1]
 if (sbr_au[-1] != '/'): sbr_au = sbr_au + '/'
 sbr_au_reports = sbr_au + "sbr_au_reports"
 icls = sbr_au + "sbr_au_taxonomy/icls/"
+fdtn = sbr_au + "sbr_au_taxonomy/fdtn/"
 dims = sbr_au + "sbr_au_taxonomy/dims/"
 
 usage_db_filename =  sbr_au.replace("/","_")[:-len("/sbr_au/")]+".db"
@@ -352,10 +461,11 @@ print "Created usage database: '" + usage_db_filename + "'"
 conn = sqlite3.connect(usage_db_filename)
 c = conn.cursor()
 
+getDataTypes(c)
+
 getDataElementsInReports(c)
 getLabelsForDataElements(c)
-#getDimensionsInReports(c)
-
+##getDimensionsInReports(c)
 generateDataElementJSON(c)
 
 conn.commit()
