@@ -78,6 +78,179 @@ datataypeReplacements = {
 
 ignoredDataTypes = ["sbrReportTypeVariationCodeItemType"]
 
+newElementNames = {
+
+9: "Identifiers.EmploymentPayrollNumber.Identifier",
+73: "OrganisationDetails.RegistrationStart.Date",
+74: "OrganisationDetails.RegistrationEnd.Date",
+136: "PaymentRecord.PaymentReference.Number",
+226: "AuditorReport.FinancialStatementsAudited.Code",
+246: "OrganisationDetails.OrganisationIndustry2006Extended.Code",
+247: "OrganisationDetails.MainIncomeActivity.Description",
+258: "Equity.TransferredFromReserves.Amount",
+261: "Equity.TransferredToReserves.Amount",
+412: "Assets.OtherFinancialAssets.CurrentDeferredAcquisitionCosts.Amount",
+426: "Liabilities.OtherFinancialLiabilities.CurrentHeldForSale.Amount",
+436: "Liabilities.OtherFinancialLiabilities.NonCurrentDesignatedAtFairValueThroughProfitOrLossUponInitialRecognition.Amount",
+437: "Liabilities.OtherFinancialLiabilities.NonCurrentDesignatedAtFairValueThroughProfitOrLossClassifiedAsHeldForTrading.Amount",
+438: "Liabilities.OtherFinancialLiabilities.NonCurrentDesignatedAtFairValueThroughProfitOrLoss.Amount",
+439: "Liabilities.OtherFinancialLiabilities.NonCurrentDesignatedAtAmortisedCost.Amount",
+455: "Income.Insurance.ReinsuranceRecoveriesOnUnexpiredRiskLiability.Amount",
+471: "Assets.CashAndLiquidAssets.Flow.ExplorationAndEvaluationOutflowsClassifiedAsInvestingActivities.Amount",
+492: "DirectorsDisclosures.DirectorsReport.PrincipalActivitiesAndSignificantChangesToPrincipalActivities.Text",
+514: "DirectorsDisclosures.DirectorsReport.NonAuditServices.Text",
+532: "BusinessDocument.BusinessGenerated.Identifier",
+564: "Liabilities.BorrowingsAndInterestBearing.Text",
+581: "Assets.OtherNonFinancialAssets.NonCurrentAssetsClassifiedAsHeldForSale.Amount",
+616: "RegulatoryDisclosures.ContingentLiabilities.Text",
+659: "GoodsAndServicesTax.ReportingMethod.Code",
+699: "Remuneration.UnusedAnnualLongServiceLeavePaymentLumpSumA.Amount",
+700: "Remuneration.UnusedAnnualLongServiceLeavePaymentLumpSumB.Amount",
+701: "Remuneration.UnusedAnnualLongServiceLeavePaymentLumpSumD.Amount",
+702: "Remuneration.UnusedAnnualLongServiceLeavePaymentLumpSumE.Amount",
+704: "Remuneration.IndividualNonBusinessExemptForeignEmploymentIncome.Amount",
+837: "Remuneration.WagesAndSalaries.PaymentsContractorAndConsultant.Amount",
+962: "Assets.DebtSecuritiesNotEligibleCollateralReserveBankOfAustraliaOwnIssued.Amount",
+965: "Assets.DebtSecuritiesNotEligibleCollateralReserveBankOfAustralia.Amount",
+1205: "Assets.OtherNonFinancialAssets.LandAndBuildings.Amount",
+1468: "Liabilities.Provisions.NonLendingLosses.Amount",
+1526: "Equity.Capital.Amount",
+1603: "Identifiers.AustralianFinancialServicesLicenceNumber.Identifier",
+1619: "Equity.Shareholders.Amount",
+1644: "IncomeTax.DeferredTotal.Amount",
+1661: "Expense.AustralianInvestmentAllowableDeduction.Amount",
+1690: "IncomeTax.PayAsYouGoWithholding.CreditForTaxWithheldFromCloselyHeldTrustTFNNotQuoted.Amount",
+1721: "Expense.ReconciliationAdjustments.Amount",
+1730: "Income.InternationalDealings.ForeignInvestmentFundAndForeignLifeAssurancePolicy.Amount",
+1764: "Income.ReconciliationAdjustmentTotal.Amount",
+1773: "Income.InternationalDealings.AttributedForeignIncomeForeignInvestmentFundOrForeignLifeAssurancePolicy.Indicator",
+1774: "Income.InternationalDealings.AttributedForeignIncomeForeignTrustorControlledForeignCompanyorTransferorTrust.Indicator",
+1794: "Expense.Operating.MotorVehicleTypeOrClaimMethod.Code",
+1823: "Expense.RealEstateProperty.CapitalWorksDeduction.Amount",
+1859: "IncomeTax.PayAsYouGoWithholding.CreditTaxWithheldUnusedAnnualOrLongServiceLeavePaymentLumpSumA.Amount",
+1860: "IncomeTax.PayAsYouGoWithholding.CreditTaxWithheldUnusedAnnualOrLongServiceLeavePaymentLumpSumB.Amount",
+1880: "Income.TrustDistributionLessNetCapitalGainAndForeignIncome.Amount",
+1930: "BusinessDocument.GovernmentGenerated.Identifier",
+1940: "SuperannuationContribution.PersonalContributions.Amount",
+1965: "Insurance.RebatePremiumMembersDeathDisability.Amount",
+1967: "Income.Investment.TotalInvestmentRevenue.Amount",
+2048: "Assets.ManagedInvestments.Amount",
+2054: "Assets.Investment.SecuritiesOther.Amount",
+2056: "Liabilities.SecuredFunding.Amount",
+2098: "Expense.RealEstateProperty.CapitalWorksDeductionRecouped.Amount",
+2100: "Income.RealEstateProperty.RentalRelatedOther.Amount",
+2119: "Tax.Losses.DeductedOwnershipTestFailContinuityTestPass.Amount",
+2120: "Tax.Losses.CarriedForward.BusinessContinuityTestPassed.Amount",
+2320: "Equity.TransfersToFromRetainedProfitsFromToReserves.Amount",
+2579: "SuperannuationContribution.CapitalGainsTaxSmallBusinessExemption.Amount",
+2580: "Income.AssessableIncomeDueToFundTaxStatusChange.Amount",
+2581: "Income.NonArmsLengthOtherNet.Amount",
+2583: "Income.NonArmsLengthPrivateCompanyDividendsNet.Amount",
+2584: "Income.NonArmsLengthTrustDistributionsNet.Amount",
+2589: "Expense.DeathBenefitLumpSumIncrease.Amount",
+2590: "Expense.PremiumsDeathOrDisability.Amount",
+2591: "Expense.Investment.Amount",
+2592: "Expense.ManagementAndAdministration.Amount",
+2593: "Expense.DeductibleOther.Code",
+2594: "SuperannuationContribution.MemberTotal.Amount",
+2595: "SuperannuationContribution.EmployerAssessable.Amount",
+2598: "SuperannuationContribution.PersonalAssessable.Amount",
+2601: "Equity.InternationalDealings.ForeignFundTransfers.Amount",
+2610: "SuperannuationContribution.OtherThirdPartyContributions.Amount",
+2622: "SuperannuationBenefit.Payments.Code",
+2637: "SuperannuationRegulatoryInformation.MoneyProvidedToMembersWithoutConditionsMet.Indicator",
+2812: "Assets.CurrentOtherThanAssetsOrDisposalGroupsClassifiedAsHeldForSaleTotal.Amount",
+2819: "Assets.Intangible.ExcludingGoodwillNet.Amount",
+2859: "Expense.ReversalsOfProvisionsOther.Amount",
+2861: "ProfitOrLoss.ChangesInInventoriesOfFinishedGoodsAndWorkInProgress.Amount",
+2867: "Expense.Interest.FinancialLiabilitiesNotAtFairValueThroughProfitOrLoss.Amount",
+2870: "ProfitOrLoss.GainsOrLossesOnFinancialAssetsAtFairValueThroughProfitOrLossDesignatedAsUponInitialRecognition.Amount",
+2871: "ProfitOrLoss.GainsOrLossesOnFinancialAssetsAtFairValueThroughProfitOrLossClassifiedAsHeldForTrading.Amount",
+2872: "ProfitOrLoss.GainsOrLossesOnFinancialAssetsAtFairValueThroughProfitOrLoss.Amount",
+2939: "Assets.CashAndLiquidAssets.Flow.OtherReceiptsSalesOfInterestsInAssociatesAndJointVenturesAccountedForAsAssociates.Amount",
+2940: "Assets.CashAndLiquidAssets.Flow.OtherPaymentsToAcquireInterestsInAssociatesAndJointVenturesAccountedForAsAssociates.Amount",
+2983: "Assets.CashAndLiquidAssets.Flow.AdjustmentsForUndistributedProfitsOfAssociatesAndJointVenturesAccountedForAsAssociates.Amount",
+2989: "Equity.Movements.AdjustmentsToReconcileProfitOrLossTotal.Amount",
+3077: "Income.Interest.FinancialAssetsNotAtFairValueThroughProfitOrLoss.Amount",
+3106: "RegulatoryDisclosures.ContingentAssets.Text",
+3116: "Equity.ContributedEquity.ParValuePerShare.Text",
+3151: "Remuneration.SpecifiedPaymentsGross.Amount",
+3210: "Income.DepreciatingAssetsAssessableIncomeFromBalancingAdjustmentEventsTotal.Amount",
+3243: "Tax.Losses.TransferredContinuityTestFail.Amount",
+3327: "Capital.Losses.DeductedOwnershipTestFailContinuityTestPass.Amount",
+3332: "IncomeTax.PersonalServicesIncome.OneSourceBenchmark.Indicator",
+3401: "Miscellaneous.ControlledForeignCompaniesTrustsInterest.Count",
+3535: "Income.BalancingAdjustmentTotal.Amount",
+4920: "Expense.InvestmentOther.Amount",
+5225: "Equity.Movements.TransfersOtherTotal.Amount",
+5272: "Expense.Insurance.OperatingExpensesTotal.Amount",
+5306: "Assets.TotalExcludingDeferredAcquisitionCosts.Amount",
+5414: "Equity.Movements.RetainedProfitsTransfersInFromGeneralFund.Amount",
+5451: "SuperannuationRegulatoryInformation.ActuarialProjectionConsumerPriceIndex.Percent",
+5494: "Assets.NonInvestmentOtherNetMarketValue.Amount",
+5521: "Equity.Movements.RetainedProfitsTransfersOutToGeneralFund.Amount",
+7395: "SuperannuationFundDetails.UniqueSuperannuationIdentifier.Identifier",
+7473: "Assets.EquitySecuritiesPlusSoldEquityRepos.Amount",
+7670: "Equity.CurrentYearEarnings.Amount",
+7828: "Assets.CashAndLiquidAssets.DepositsAtCallEligible.Amount",
+7830: "Assets.CashAndLiquidAssets.DebtSecuritiesEligibleCollateralReserveBankOfAustralia.Amount",
+7831: "Assets.CashAndLiquidAssets.NegotiableCertificatesOfDeposit.Amount",
+7833: "Assets.CashAndLiquidAssets.DepositsNotAtCallEligible.Amount",
+7835: "Assets.CashAndLiquidAssets.MinimumLiquidityHoldingsOtherApproved.Amount",
+7837: "Liabilities.Deposits.AtCall.Amount",
+7838: "Liabilities.Deposits.NotAtCall.Amount",
+7842: "FinancialRisk.CapitalAdequacy.SecuritisationCapitalisedStartUpCosts.Amount",
+7915: "Liabilities.ContingentFundingObligation.Amount",
+7996: "FinancialRisk.MinimumBoardApprovedMinimumLiquidityHoldingsRatio.Percent",
+7997: "FinancialRisk.LowestMinimumLiquidityHoldingsRatio.Percent",
+8085: "FinancialRisk.Market.ScalingFactorVaR.Number",
+8098: "FinancialRisk.Market.ScalingFactorVaRInterestRatePositions.Number",
+8099: "FinancialRisk.Market.ScalingFactorVaREquityPositions.Number",
+8100: "FinancialRisk.Market.ScalingFactorForeignExchangeVaRPositions.Number",
+8101: "FinancialRisk.Market.ScalingFactorVaRCommodityPositions.Number",
+8254: "OrganisationDetails.MinimumBranchRequirement.Indicator",
+8299: "Assets.Insurance.ReinsuranceOtherNotMeetDocumentationTest.Amount",
+8300: "Assets.Insurance.ReinsuranceOtherMeetDocumentationTest.Amount",
+8477: "Assets.DebtSecuritiesAndDeposits.Amount",
+8494: "Assets.EquitySecuritiesOther.Amount",
+8583: "Income.Operating.Amount",
+8624: "Liabilities.Insurance.OutstandingClaimsAndPremiumsLiabilitiesNetSurplusDeficitTaxEffectAdjustment.Amount",
+8639: "Assets.OtherFinancialAssets.SurplusDefinedBenefitSuperannuationFund.Amount",
+8640: "Liabilities.OtherNonFinancialLiabilities.DeficitDefinedBenefitSuperannuationFund.Amount",
+8641: "Assets.Insurance.ReinsuranceDoNotMeetDocumentationTestNet.Amount",
+8642: "Assets.Insurance.ReinsuranceDoNotMeetGoverningLawRequirement.Amount",
+8746: "Assets.ImmediateBorrowerClaims.Amount",
+8747: "Liabilities.ImmediateBorrowerLiability.Amount",
+8748: "Assets.Claims.Amount",
+8749: "Assets.RiskTransferOutward.Amount",
+8756: "Assets.DerivativeFinancialInstruments.UltimateRiskClaims.Amount",
+8757: "Assets.Exposures.Guarantees.Amount",
+8758: "Assets.Exposures.CreditCommitments.Amount",
+8797: "Assets.TotalOtherGeneralInsurance.Amount",
+8819: "Assets.RiskTransferInward.Amount",
+8841: "Liabilities.Insurance.NetPremiumOther.Description",
+8895: "Assets.LoansDeposits.Amount",
+9087: "Miscellaneous.EarnoutArrangementEligibility.Code",
+9088: "Miscellaneous.EarnoutArrangementDuration.Count",
+9089: "Miscellaneous.EarnoutArrangementApplicableYear.Number",
+12465: "Assets.SecuritisationProgramRepurchased.Amount",
+12509: "Expense.ResearchAndDevelopment.ContractedExpenditureResearchServiceProvider.Amount",
+12510: "Expense.ResearchAndDevelopment.ContractedExpenditureNonResearchServiceProvider.Amount",
+12535: "Expense.Operating.ManagementExpense.Amount",
+12711: "Identifiers.SuperannuationFundGeneratedEmployer.Identifier",
+13188: "SuperannuationRegulatoryInformation.BenefitPaymentsMadeInAccordanceWithActuarialRecommendations.Code",
+13194: "Assets.CollateralProvided.Amount",
+13219: "SuperannuationRegulatoryInformation.MemberProfileMinimumAccountBalance.Amount",
+13222: "SuperannuationRegulatoryInformation.MemberProfileMaximumSalary.Amount",
+13227: "SuperannuationRegulatoryInformation.MemberProfileMaximumAccountBalance.Amount",
+13229: "SuperannuationRegulatoryInformation.MemberProfileMinimumSalary.Amount",
+13244: "Capital.Losses.CarriedForward.BusinessContinuityTestPassedNet.Amount",
+13282: "Assets.EarningNetOfProvisions.Amount",
+13599: "IncomeTax.Deduction.SelfEducation.Code",
+14013: "IncomeTax.PaymentType.Code",
+14705: "IncomeTax.PayAsYouGoInstalmentReporting.Code"
+}
+
 def getDataElementLabelsFromLabLink(path, elements):
     path = icls + path + ".labLink.xml"
     #print "Getting labels from",path
@@ -362,6 +535,7 @@ def generateDataElementJSON(c):
         element = {}
         c.execute("select label from labels where controlledid = '{0}' and labelrole = 'label'".format(dataElement))
         element["name"] = c.fetchone()[0]
+        if(dataElement in newElementNames):element["name"] = newElementNames[dataElement]
         try:
             c.execute("select label from labels where controlledid = '{0}' and labelrole = 'definition'".format(dataElement))
             element["definition"] = c.fetchone()[0]
@@ -402,7 +576,7 @@ def generateDataElementJSON(c):
             if(dt.facets != {}): typeDict["facets"] = dt.facets
             element["datatype"] = typeDict
         else:
-            element["datatype"] = xbrlDataTypeMap[datatype]
+            element["datatype"] = {"type" : xbrlDataTypeMap[datatype]}
 
         elements.append(element)
 
@@ -455,7 +629,7 @@ usage_db_filename =  sbr_au.replace("/","_")[:-len("/sbr_au/")]+".db"
 
 if os.path.exists(usage_db_filename):
     print "Removing previous database : " + usage_db_filename
-    os.remove(usage_db_filename)
+    #os.remove(usage_db_filename)
 print "Created usage database: '" + usage_db_filename + "'"
 
 conn = sqlite3.connect(usage_db_filename)
@@ -463,8 +637,8 @@ c = conn.cursor()
 
 getDataTypes(c)
 
-getDataElementsInReports(c)
-getLabelsForDataElements(c)
+#getDataElementsInReports(c)
+#getLabelsForDataElements(c)
 ##getDimensionsInReports(c)
 generateDataElementJSON(c)
 
