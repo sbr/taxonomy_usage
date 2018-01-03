@@ -13,6 +13,7 @@ usage = "Usage: ./eeu.py full_path_to_sbr_au"
 labelLookup = {}
 datatypeLookup = {}
 datatypeJSONLookup = {}
+xbrlPartsLookup = {}
 reclassificaionLookup = {
 "DE13194":"baf/bafpo/bafpo1",
 "DE2056":"baf/bafpo/bafpo1",
@@ -307,6 +308,7 @@ def loadDataElementDetails(path, id):
     path = path + ".data.xsd"
     newId = '"' + id + "\\\"\""
     cmd = "grep " + newId + " " + path
+    xbrlParts = {}
 
     for part in subprocess.check_output(cmd, shell=True).replace("\t",' ').replace("  "," ").split(" "):
         if part.startswith("name"):
@@ -315,7 +317,13 @@ def loadDataElementDetails(path, id):
         if part.startswith("type"):
             datatype = part.replace("\"","").replace("type=","")
             datatypeLookup[id] = datatype
-
+        if part.startswith("xbrli:periodType"):
+            xbrlParts["period"] = part.replace("xbrli:periodType=\"","").lower().split("\"")[0]
+            if(xbrlParts["period"] not in ["instant","duration"]): exitIfNull("","Period wasn't instant or duration: " + str(xbrlParts))
+        if part.startswith("xbrli:balance"):
+            xbrlParts["balance"] = part.replace("xbrli:balance=\"","").lower().split("\"")[0]
+            if(xbrlParts["balance"] not in ["credit","debit"]): exitIfNull("","Balance wasn't credit or debit: " + str(xbrlParts))
+    if(xbrlParts != {}): xbrlPartsLookup[id] = xbrlParts
 
 def getDimensionLabel(path, id):
     if id in labelLookup:
@@ -524,13 +532,14 @@ class DataElement():
         exitIfNull(self.label, "Couldn't extract label from " + line)
 
 
-def generateDataElementJSON(c):
+def generateOutputJSON(c):
     print "Writing definitions to 'definitions.json'"
     dataElements = []
     for row in c.execute("select controlledid from latest_de order by controlledid"):
         dataElements.append(str(row[0]))
 
     elements = []
+    syntax = []
     for dataElement in dataElements:
         element = {}
         c.execute("select label from labels where controlledid = '{0}' and labelrole = 'label'".format(dataElement))
@@ -579,6 +588,10 @@ def generateDataElementJSON(c):
             element["datatype"] = {"type" : xbrlDataTypeMap[datatype]}
 
         elements.append(element)
+        if(dataElement in xbrlPartsLookup):
+            syn = {"identifier" : element["identifier"],"syntax":{}}
+            syn["syntax"]["xbrl"] = xbrlPartsLookup[dataElement]
+            syntax.append(syn)
 
 
 
@@ -590,6 +603,17 @@ def generateDataElementJSON(c):
 
     text_file = open(definitions_file_name, "w")
     text_file.write(json.dumps(elements))
+    text_file.close()
+
+    print "Writing syntax to 'syntaxes.json'"
+    syntax_file_name = 'syntax.json'
+    if os.path.exists(syntax_file_name):
+        print "Removing previous", syntax_file_name
+        os.remove(syntax_file_name)
+    print "Created",syntax_file_name
+
+    text_file = open(syntax_file_name, "w")
+    text_file.write(json.dumps(syntax))
     text_file.close()
 
 
@@ -629,7 +653,7 @@ usage_db_filename =  sbr_au.replace("/","_")[:-len("/sbr_au/")]+".db"
 
 if os.path.exists(usage_db_filename):
     print "Removing previous database : " + usage_db_filename
-    #os.remove(usage_db_filename)
+    os.remove(usage_db_filename)
 print "Created usage database: '" + usage_db_filename + "'"
 
 conn = sqlite3.connect(usage_db_filename)
@@ -637,10 +661,11 @@ c = conn.cursor()
 
 getDataTypes(c)
 
-#getDataElementsInReports(c)
-#getLabelsForDataElements(c)
+getDataElementsInReports(c)
+getLabelsForDataElements(c)
+
 ##getDimensionsInReports(c)
-generateDataElementJSON(c)
+generateOutputJSON(c)
 
 conn.commit()
 conn.close()
