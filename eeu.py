@@ -80,7 +80,6 @@ datataypeReplacements = {
 ignoredDataTypes = ["sbrReportTypeVariationCodeItemType"]
 
 newElementNames = {
-
 9: "Identifiers.EmploymentPayrollNumber.Identifier",
 73: "OrganisationDetails.RegistrationStart.Date",
 74: "OrganisationDetails.RegistrationEnd.Date",
@@ -252,6 +251,11 @@ newElementNames = {
 14705: "IncomeTax.PayAsYouGoInstalmentReporting.Code"
 }
 
+newElementLabels = {
+'DE3569': "Organisation Details Activity Event Code",
+'DE13250': "Account Open Or Closed"
+}
+
 def getDataElementLabelsFromLabLink(path, elements):
     path = icls + path + ".labLink.xml"
     #print "Getting labels from",path
@@ -277,7 +281,10 @@ def getDataElementLabelsFromLabLink(path, elements):
             print label.text
             sys.exit(1)
 
-        c.execute("INSERT INTO labels VALUES ( ?, ?, ? )", (controlledid, role, labelText))
+        if(role == "label" and controlledid in newElementLabels): labelText = newElementLabels[controlledid]
+        if(role == "label" and str(labelText).strip().count(' ') < 1): exitIfNull("","Found element label with no spaces " + controlledid + " " + labelText)
+        if(str(labelText).strip().count(' ') > 1):
+            c.execute("INSERT INTO labels VALUES ( ?, ?, ? )", (controlledid, role, labelText))
 
 def getLabelsForDataElements(c):
     print "Getting labels for DataElements"
@@ -605,8 +612,8 @@ def generateOutputJSON(c):
     text_file.write(json.dumps(elements))
     text_file.close()
 
-    print "Writing syntax to 'syntaxes.json'"
-    syntax_file_name = 'syntax.json'
+    syntax_file_name = 'syntaxes.json'
+    print "Writing syntax to '" + syntax_file_name + "'"
     if os.path.exists(syntax_file_name):
         print "Removing previous", syntax_file_name
         os.remove(syntax_file_name)
