@@ -6,3 +6,8 @@
 !README.md
 !eeu.py
 !get_taxonomy.py
+!usage.sh
+!Procfile
+!Pipfile
+!Pipfile.lock
+!runtime.txt

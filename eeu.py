@@ -74,7 +74,9 @@ datataypeReplacements = {
 "sbrGstReportingOptionItemType": "sbrGstReportingOptionCodeItemType",
 "sbrOrganisationTypeItemType": "sbrOrganisationTypeCodeItemType",
 "sbrPartyTypeItemType": "sbrPartyTypeCodeItemType",
-"sbrLodgmentFrequencyItemType": "sbrLodgmentFrequencyCodeItemType"
+"sbrLodgmentFrequencyItemType": "sbrLodgmentFrequencyCodeItemType",
+"sbrEducationCategoryCodeItemType":"sbrEducationDeductionCodeItemType",
+"sbrChannelItemType":"sbrChannelCodeItemType"
 }
 
 ignoredDataTypes = ["sbrReportTypeVariationCodeItemType"]
@@ -651,6 +653,7 @@ def getDataTypes(c):
     for type in types:
         dt = DataType(type)
         datatypeJSONLookup[dt.name] = dt
+        print "Adding datatype: " + dt.name
 
 
 
