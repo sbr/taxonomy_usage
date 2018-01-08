@@ -540,12 +540,13 @@ class DataElement():
 
 
 def generateOutputJSON(c):
-    print "Writing definitions to 'definitions.json'"
+    print "Writing definitions to 'sbr.json'"
     dataElements = []
     for row in c.execute("select controlledid from latest_de order by controlledid"):
         dataElements.append(str(row[0]))
 
-    elements = []
+    sbr = []
+    fs = []
     syntax = []
     for dataElement in dataElements:
         element = {}
@@ -594,7 +595,10 @@ def generateOutputJSON(c):
         else:
             element["datatype"] = {"type" : xbrlDataTypeMap[datatype]}
 
-        elements.append(element)
+        if(element["domain"] == "Standard Business Reporting"): sbr.append(element)
+        if(element["domain"] == "Financial Statistics"): fs.append(element)
+
+
         if(dataElement in xbrlPartsLookup):
             syn = {"identifier" : element["identifier"],"syntax":{}}
             syn["syntax"]["xbrl"] = xbrlPartsLookup[dataElement]
@@ -602,14 +606,24 @@ def generateOutputJSON(c):
 
 
 
-    definitions_file_name = 'definitions.json'
+    definitions_file_name = 'sbr.json'
     if os.path.exists(definitions_file_name):
         print "Removing previous", definitions_file_name
         os.remove(definitions_file_name)
     print "Created",definitions_file_name
 
     text_file = open(definitions_file_name, "w")
-    text_file.write(json.dumps(elements))
+    text_file.write(json.dumps(sbr))
+    text_file.close()
+
+    definitions_file_name = 'fs.json'
+    if os.path.exists(definitions_file_name):
+        print "Removing previous", definitions_file_name
+        os.remove(definitions_file_name)
+    print "Created",definitions_file_name
+
+    text_file = open(definitions_file_name, "w")
+    text_file.write(json.dumps(fs))
     text_file.close()
 
     syntax_file_name = 'syntaxes.json'
