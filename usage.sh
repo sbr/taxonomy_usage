@@ -6,5 +6,6 @@ if [ $? -eq 0 ]; then
   python eeu.py ${taxonomyFolder}
   if [ $? -eq 0 ]; then
     echo "Everything seems ok"
+    find *.json -type f -print -exec cat {} \;
   fi
 fi

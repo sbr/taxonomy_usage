@@ -4,10 +4,11 @@
 # But not these files...
 !.gitignore
 !README.md
-!eeu.py
 !get_taxonomy.py
 !usage.sh
 !Procfile
 !Pipfile
 !Pipfile.lock
 !runtime.txt
+!extract_usage.py
+!eeu.py
