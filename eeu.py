@@ -377,7 +377,7 @@ def generateOutputJSON(c):
 
         c.execute("select label from labels where controlledid = '{0}' and labelrole = 'label'".format(dataElement))
         element["name"] = c.fetchone()[0]
-        
+
         try:
             c.execute("select label from labels where controlledid = '{0}' and labelrole = 'definition'".format(dataElement))
             element["definition"] = c.fetchone()[0]
@@ -400,8 +400,8 @@ def generateOutputJSON(c):
             element["domain"] = "Financial Statistics"
             element["identifier"] = "http://dxa.gov.au/definition/fs/" + dataElement.lower()
         else:
-            element["domain"] = "Standard Business Reporting"
-            element["identifier"] = "http://dxa.gov.au/definition/sbr/" + dataElement.lower()
+            element["domain"] = "Other"
+            element["identifier"] = "http://dxa.gov.au/definition/other/" + dataElement.lower()
 
         c.execute("select datatype from latest_de where controlledid = '{0}'".format(dataElement))
         datatype = c.fetchone()[0]
@@ -419,7 +419,7 @@ def generateOutputJSON(c):
         else:
             element["datatype"] = {"type" : xbrlDataTypeMap[datatype]}
 
-        if(element["domain"] == "Standard Business Reporting"): sbr.append(element)
+        if(element["domain"] == "Other"): sbr.append(element)
         if(element["domain"] == "Financial Statistics"): fs.append(element)
 
 
@@ -434,14 +434,15 @@ def generateOutputJSON(c):
     print "Writing json definitions: [" + str(len(dataElements)) + " of " + str(len(dataElements)) + "]\ndone."
 
 
-    definitions_file_name = 'sbr.json'
+    definitions_file_name = 'other.json'
     if os.path.exists(definitions_file_name):
         #print "Removing previous", definitions_file_name
         os.remove(definitions_file_name)
     print "Created",definitions_file_name
 
     text_file = open(definitions_file_name, "w")
-    text_file.write(json.dumps(sbr))
+    sbr_wrapper = {"domain":"Other","acronym":"other","version":sbr_au_version,"content":sbr}
+    text_file.write(json.dumps(sbr_wrapper))
     text_file.close()
 
     definitions_file_name = 'fs.json'
@@ -451,7 +452,8 @@ def generateOutputJSON(c):
     print "Created",definitions_file_name
 
     text_file = open(definitions_file_name, "w")
-    text_file.write(json.dumps(fs))
+    fs_wrapper = {"domain":"Financial Statistics","acronym":"fs","version":sbr_au_version,"content":fs}
+    text_file.write(json.dumps(fs_wrapper))
     text_file.close()
 
     syntax_file_name = 'syntaxes.json'
@@ -493,6 +495,8 @@ if len(sys.argv) != 2:
     sys.exit(1)
 
 sbr_au = sys.argv[1]
+sbr_au_version = sbr_au[0:10]
+
 if (sbr_au[-1] != '/'): sbr_au = sbr_au + '/'
 sbr_au_reports = sbr_au + "sbr_au_reports"
 icls = sbr_au + "sbr_au_taxonomy/icls/"
