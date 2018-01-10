@@ -7,5 +7,7 @@ if [ $? -eq 0 ]; then
   if [ $? -eq 0 ]; then
     echo "Everything seems ok"
     find *.json -type f -print -exec cat {} \;
+    # toying with something like
+    #curl -vX POST http://ausdx.tk/api/domains/other -d @other.json --header "Content-Type: application/json"
   fi
 fi
