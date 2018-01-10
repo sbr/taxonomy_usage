@@ -223,7 +223,7 @@ def getDataElementsInReports(c):
         populateDataelementLatestVersion(de)
 
         count = count + 1
-        if(count % 1000 == 0):
+        if(count % 10000 == 0):
             print "Extracting DataElement usage: [" + str(count) + " of " + str(len(lines)) + "]"
     print "Extracting DataElement usage: [" + str(len(lines)) + " of " + str(len(lines)) + "]\ndone."
     conn.commit()
