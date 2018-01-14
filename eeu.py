@@ -121,15 +121,15 @@ def camel_case_split(identifier):
     matches = re.finditer('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)', identifier)
     return " ".join([m.group(0) for m in matches])
 
-def loadDataElementDetails(path, id):
+def loadDataElementDetails(classification, id):
     # 	<xsd:element name="OrganisationNameDetails.OrganisationalName.Text" substitutionGroup="xbrli:item" nillable="true" id="DE55" xbrli:periodType="duration" type="dtyp.02.00:sbrOrganisationNameItemType" block="substitution"/>
     if id in labelLookup:
         return labelLookup[id]
 
-    path = path + ".data.xsd"
+    path = icls + classification + ".data.xsd"
     newId = '"' + id + "\\\"\""
     cmd = "grep " + newId + " " + path
-    xbrlParts = {}
+    xbrlParts = {"classification":classification}
 
     for part in subprocess.check_output(cmd, shell=True).replace("\t",' ').replace("  "," ").split(" "):
         if part.startswith("name"):
@@ -352,7 +352,7 @@ class DataElement():
 
         exitIfNull(self.classification, "Couldn't extract classification from " + line)
         exitIfNull(self.controlledid, "Couldn't extract controlledid from " + line)
-        loadDataElementDetails(icls + self.classification, self.controlledid)
+        loadDataElementDetails(self.classification, self.controlledid)
         self.datatype = datatypeLookup[self.controlledid]
         exitIfNull(self.datatype, "Couldn't extract datatype from " + line)
 
@@ -371,6 +371,8 @@ def generateOutputJSON(c):
     sbr = []
     fs = []
     syntax = []
+    classifications = []
+
     count = 0
     for dataElement in dataElements:
         element = {}
@@ -422,7 +424,6 @@ def generateOutputJSON(c):
         if(element["domain"] == "Other"): sbr.append(element)
         if(element["domain"] == "Financial Statistics"): fs.append(element)
 
-
         if(dataElement in xbrlPartsLookup):
             syn = {"identifier" : element["identifier"],"syntax":{}}
             syn["syntax"]["xbrl"] = xbrlPartsLookup[dataElement]
@@ -432,7 +433,7 @@ def generateOutputJSON(c):
         if(count % 100 == 0):
             print "Writing json definitions: [" + str(count) + " of " + str(len(dataElements)) + "]"
     print "Writing json definitions: [" + str(len(dataElements)) + " of " + str(len(dataElements)) + "]\ndone."
-
+    dataElements = None
 
     definitions_file_name = 'other.json'
     if os.path.exists(definitions_file_name):
@@ -444,6 +445,8 @@ def generateOutputJSON(c):
     sbr_wrapper = {"domain":"Other","acronym":"other","version":sbr_au_version,"content":sbr}
     text_file.write(json.dumps(sbr_wrapper))
     text_file.close()
+    sbr = None
+    sbr_wrapper = None
 
     definitions_file_name = 'fs.json'
     if os.path.exists(definitions_file_name):
@@ -455,6 +458,8 @@ def generateOutputJSON(c):
     fs_wrapper = {"domain":"Financial Statistics","acronym":"fs","version":sbr_au_version,"content":fs}
     text_file.write(json.dumps(fs_wrapper))
     text_file.close()
+    fs = None
+    fs_wrapper = None
 
     syntax_file_name = 'syntaxes.json'
     print "Writing syntax to '" + syntax_file_name + "'"
@@ -466,6 +471,7 @@ def generateOutputJSON(c):
     text_file = open(syntax_file_name, "w")
     text_file.write(json.dumps(syntax))
     text_file.close()
+    syntax = None
 
 
 def getDataTypes(c):
