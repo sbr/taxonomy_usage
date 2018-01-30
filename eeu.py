@@ -524,7 +524,8 @@ getDataTypes(c)
 getDataElementsInReports(c)
 getLabelsForDataElements(c)
 
-##getDimensionsInReports(c)
+getDimensionsInReports(c)
+
 generateOutputJSON(c)
 
 conn.commit()
