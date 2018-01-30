@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 import sqlite3
 import sys
+import csv
 
 def writeCSV(fileName, rows):
-    print fileName
-    for row in rows:
-        print row
+    with open(fileName, 'wb') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',',quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for row in rows:
+            writer.writerow(row)
 
 def getElementsUniqueToAPRA(c):
     rows = []
