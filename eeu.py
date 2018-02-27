@@ -443,7 +443,7 @@ def generateOutputJSON(c):
 
     text_file = open(definitions_file_name, "w")
     sbr_wrapper = {"domain":"Other","acronym":"other","version":sbr_au_version,"content":sbr}
-    text_file.write(json.dumps(sbr_wrapper))
+    text_file.write(json.dumps(sbr_wrapper, sort_keys=True, indent=4, separators=(',', ': ')))
     text_file.close()
     sbr = None
     sbr_wrapper = None
@@ -456,7 +456,7 @@ def generateOutputJSON(c):
 
     text_file = open(definitions_file_name, "w")
     fs_wrapper = {"domain":"Financial Statistics","acronym":"fs","version":sbr_au_version,"content":fs}
-    text_file.write(json.dumps(fs_wrapper))
+    text_file.write(json.dumps(fs_wrapper, sort_keys=True, indent=4, separators=(',', ': ')))
     text_file.close()
     fs = None
     fs_wrapper = None
@@ -469,7 +469,7 @@ def generateOutputJSON(c):
     print "Created",syntax_file_name
 
     text_file = open(syntax_file_name, "w")
-    text_file.write(json.dumps(syntax))
+    text_file.write(json.dumps(syntax, sort_keys=True, indent=4, separators=(',', ': ')))
     text_file.close()
     syntax = None
 
