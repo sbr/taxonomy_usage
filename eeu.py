@@ -38,7 +38,7 @@ agencyLookup = {
 "osrtas": "TAS Office of Revenue",
 "osrvic": "VIC Office of Revenue",
 "osrwa": "WA Office of Revenue",
-"sprstrm": "SuperStream"
+"sprstrm": "Super Stream"
 }
 
 xbrlDataTypeMap = {
@@ -134,6 +134,7 @@ def loadDataElementDetails(classification, id):
     for part in subprocess.check_output(cmd, shell=True).replace("\t",' ').replace("  "," ").split(" "):
         if part.startswith("name"):
             name = part.replace("\"","").replace("name=","")
+            xbrlParts["name"] = name
             labelLookup[id] = name
         if part.startswith("type"):
             datatype = part.replace("\"","").replace("type=","")
@@ -370,8 +371,10 @@ def generateOutputJSON(c):
 
     sbr = []
     fs = []
+    ss = []
     syntax = []
     classifications = []
+    intersectionCounts = {}
 
     count = 0
     for dataElement in dataElements:
@@ -393,17 +396,24 @@ def generateOutputJSON(c):
         element["status"] = "Standard"
 
         usage = []
-        for agency in c.execute("select distinct agency from usage_de where controlledid = '{0}'".format(dataElement)):
+        for agency in c.execute("select distinct agency from usage_de where controlledid = '{0}' order by agency".format(dataElement)):
             usage.append(agencyLookup[agency[0]])
         element["usage"] = usage
+        if(not intersectionCounts.has_key(str(usage))): intersectionCounts[str(usage)] = 0
+        intersectionCounts[str(usage)] = intersectionCounts[str(usage)] + 1
 
         justAPRA = (usage == ["Australian Prudential Regulation Agency"])
+        justSuper = (usage == ["Super Stream"])
+        #ifother = (not(justAPRA and justSuper))
         if justAPRA:
             element["domain"] = "Financial Statistics"
             element["identifier"] = "http://dxa.gov.au/definition/fs/" + dataElement.lower()
+        elif justSuper:
+            element["domain"] = "Super Stream"
+            element["identifier"] = "http://dxa.gov.au/definition/ss/" + dataElement.lower()
         else:
-            element["domain"] = "Other"
-            element["identifier"] = "http://dxa.gov.au/definition/other/" + dataElement.lower()
+            element["domain"] = "Taxation and revenue collection"
+            element["identifier"] = "http://dxa.gov.au/definition/trc/" + dataElement.lower()
 
         c.execute("select datatype from latest_de where controlledid = '{0}'".format(dataElement))
         datatype = c.fetchone()[0]
@@ -421,8 +431,9 @@ def generateOutputJSON(c):
         else:
             element["datatype"] = {"type" : xbrlDataTypeMap[datatype]}
 
-        if(element["domain"] == "Other"): sbr.append(element)
+        if(element["domain"] == "Taxation and revenue collection"): sbr.append(element)
         if(element["domain"] == "Financial Statistics"): fs.append(element)
+        if(element["domain"] == "Super Stream"): ss.append(element)
 
         if(dataElement in xbrlPartsLookup):
             syn = {"identifier" : element["identifier"],"syntax":{}}
@@ -435,14 +446,18 @@ def generateOutputJSON(c):
     print "Writing json definitions: [" + str(len(dataElements)) + " of " + str(len(dataElements)) + "]\ndone."
     dataElements = None
 
-    definitions_file_name = 'other.json'
+    print "Here's a breakdown of which elements are used by which agency:"
+    for key, value in intersectionCounts.iteritems():
+        print key, value
+
+    definitions_file_name = 'trc.json'
     if os.path.exists(definitions_file_name):
         #print "Removing previous", definitions_file_name
         os.remove(definitions_file_name)
     print "Created",definitions_file_name
 
     text_file = open(definitions_file_name, "w")
-    sbr_wrapper = {"domain":"Other","acronym":"other","version":sbr_au_version,"content":sbr}
+    sbr_wrapper = {"domain":"Taxation and revenue collection","acronym":"trc","version":sbr_au_version,"content":sbr}
     text_file.write(json.dumps(sbr_wrapper, sort_keys=True, indent=4, separators=(',', ': ')))
     text_file.close()
     sbr = None
@@ -460,6 +475,20 @@ def generateOutputJSON(c):
     text_file.close()
     fs = None
     fs_wrapper = None
+
+    definitions_file_name = 'ss.json'
+    if os.path.exists(definitions_file_name):
+        #print "Removing previous", definitions_file_name
+        os.remove(definitions_file_name)
+    print "Created",definitions_file_name
+
+    text_file = open(definitions_file_name, "w")
+    ss_wrapper = {"domain":"Super Stream","acronym":"ss","version":sbr_au_version,"content":ss}
+    text_file.write(json.dumps(ss_wrapper, sort_keys=True, indent=4, separators=(',', ': ')))
+    text_file.close()
+    ss = None
+    ss_wrapper = None
+
 
     syntax_file_name = 'syntaxes.json'
     print "Writing syntax to '" + syntax_file_name + "'"
