@@ -24,7 +24,9 @@ reclassificaionLookup = {
 "DE9":"py/pyid/pyid",
 "DE9087":"baf/bafot/bafot",
 "DE9088":"baf/bafot/bafot",
-"DE9089":"baf/bafot/bafot"}
+"DE9089":"baf/bafot/bafot",
+"DE260":"baf/bafpo/bafpo4"
+}
 
 agencyLookup = {
 "apra":"Australian Prudential Regulation Agency",
