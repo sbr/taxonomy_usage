@@ -2,6 +2,7 @@
 *
 
 # But not these files...
+!sync.py
 !.gitignore
 !README.md
 !get_taxonomy.py

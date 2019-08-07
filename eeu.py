@@ -409,13 +409,13 @@ def generateOutputJSON(c):
         #ifother = (not(justAPRA and justSuper))
         if justAPRA:
             element["domain"] = "Financial Statistics"
-            element["identifier"] = "http://dxa.gov.au/definition/fs/" + dataElement.lower()
+            element["identifier"] = "http://api.gov.au/definition/fs/" + dataElement.lower()
         elif justSuper:
             element["domain"] = "Super Stream"
-            element["identifier"] = "http://dxa.gov.au/definition/ss/" + dataElement.lower()
+            element["identifier"] = "http://api.gov.au/definition/ss/" + dataElement.lower()
         else:
             element["domain"] = "Taxation and revenue collection"
-            element["identifier"] = "http://dxa.gov.au/definition/trc/" + dataElement.lower()
+            element["identifier"] = "http://api.gov.au/definition/trc/" + dataElement.lower()
 
         c.execute("select datatype from latest_de where controlledid = '{0}'".format(dataElement))
         datatype = c.fetchone()[0]

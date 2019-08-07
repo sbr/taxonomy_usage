@@ -13,3 +13,4 @@ name = "pypi"
 
 "beautifulsoup4" = "*"
 lxml = "*"
+requests = "*"
