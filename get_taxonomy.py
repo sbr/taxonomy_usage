@@ -20,7 +20,7 @@ ftp = ftplib.FTP(os.environ['url'])
 ftp.login(os.environ['user'], os.environ['pass'])
 sys.stderr.write(" OK.\n")
 
-path = "/SBRSoftwareDeveloperRelationship&Support@sbr.gov.au/Taxonomy/1. Current Version/"
+path = "/SBR/Taxonomy/1. Current Version/"
 ftp.cwd(path)
 filenames = ftp.nlst()
 if(len(filenames) != 1):

@@ -11,9 +11,9 @@ if [ $? -eq 0 ]; then
     ./upload_csv.sh
     ./stats.py ${taxonomyFolder}> stats.txt
     echo "Deleting from server: stats.txt"
-    curl -v ftp://$url -Q "DELE SBRSoftwareDeveloperRelationship&Support@sbr.gov.au/Taxonomy/stats.txt" --user $user:$pass 2> /dev/null
+    curl -v ftp://$url -Q "DELE SBR/Taxonomy/stats.txt" --user $user:$pass 2> /dev/null
     echo "Uploading stats.txt"
-    curl -T "stats.txt" ftp://$url/SBRSoftwareDeveloperRelationship%26Support%40sbr.gov.au/Taxonomy/ --user $user:$pass
+    curl -T "stats.txt" ftp://$url/SBR/Taxonomy/ --user $user:$pass
 
     # toying with something like
     #curl -vX POST http://ausdx.tk/api/domains/other -d @other.json --header "Content-Type: application/json"
